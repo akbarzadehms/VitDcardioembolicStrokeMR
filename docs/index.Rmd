@@ -1,0 +1,295 @@
+---
+title: "Supplementary Material of the paper entitled:"
+subtitle: "Causal effect of serum 25 hydroxyvitamin D concentration on cardioembolic stroke: evidence from Mendelian randomization"
+author: 
+- name: "Created by Mahdi Akbarzadeh (Email: akbarzadeh.ms@gmail.com),  and Danial Habibi"
+date: "`r Sys.Date()`"
+fontsize: 30pt  
+output: 
+  rmarkdown::html_document:
+    theme: journal
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Authors list
+
+1.  Danial Habibi	
+2.	Mahdi Akbarzadeh 
+3.	Farshad Teymoori
+4.	Sahand Tehrani Fateh 
+5.	Sajedeh Masjoudi
+6.  Amir Hossein Saeidian
+7.	Farhad Hosseinpanah
+8.	Hakon Hakonarson
+9.	Fereidoun Azizi
+10.	Alireza Soleymani T
+11. Mehdi Hedayati
+12.	Maryam Sadat Daneshpour
+13.	Marjan Mansourian
+
+# Introduction
+
+* **Title:** Investigating the causality between **Serum 25 hydroxy vitamin D concentration  on cardioembolic stroke**
+
+    + Exposure:Serum 25 hydroxy vitamin D concentration, Reference paper:  [Revez Paper 2020](https://www.nature.com/articles/s41467-020-15421-7) | GWAS ID:[GCST90000616](https://www.ebi.ac.uk/gwas/studies/GCST90000616) 
+    + **Sample size**:417,580
+    + Outcome: cardioembolic stroke, Reference paper: [Mishra Paper 2022](https://www.nature.com/articles/s41586-022-05165-3) | GWAS ID: [GCST90104541](https://www.ebi.ac.uk/gwas/studies/GCST90104541)
+    + **Sample size**: 1,245,612 , **Number of cases**: 10,804 , **Number of controls**: 1,234,808 
+    + Ancestry: **European** 
+    
+    
+```{r setwd and packages, echo=FALSE, message=FALSE, warning=FALSE}
+setwd("D:\\Akbarzade Dr\\Daniel\\Project\\1")
+rm(list=ls())
+library(TwoSampleMR)
+library(MRPracticals)
+library(phenoscanner)
+library(MRPRESSO)
+library(data.table)
+library(writexl)
+library(MendelianRandomization)
+```
+
+# Data Preparation
+1- **Number of total SNPs in exposure:** 7,250,104 SNPs
+
+2- **Number of SNPs exposure with p-value <** $10^-8$ = 16,012 SNPs
+
+3- **Number of SNPs exposure after clumping ** = 150 SNPs
+
+4- **Number of total SNPs in outcome**: 8,306,091 SNPs
+
+5- **Number of common variants between exposure and outcome**: 112 SNPs
+
+6- **Number of SNPs after harmonization (action=2) ** = 110 SNPs
+
+7- **Number of SNPs after removing HLA region ** = 110 SNP
+
+8- **Number of SNPs after removing those that have MAF < 0.01** = 110 SNPs
+
+# Checking pleiotropy by [Phenoscanner](http://www.phenoscanner.medschl.cam.ac.uk/):
+
+How many SNPs have been eliminated with checking the phenoscanner website: 0 SNPs
+
+# Checking weakness of the instruments:
+
+```{r Checking weekness, echo=TRUE, message=FALSE, warning=FALSE}
+data <- fread("data.txt")
+data$F<-(data$beta.exposure/data$se.exposure)^2
+summary(data$F)
+```
+How many SNPs have been eliminated with checking the weakness: 0 SNP
+
+
+# RUN an initial MR:
+
+```{r RUN an initial MR, echo=TRUE, message=FALSE, warning=FALSE}
+res<-mr(data)
+res
+plot(data$beta.exposure,data$beta.outcome)
+text(data$beta.exposure,                                
+     data$beta.outcome,
+     labels = data$SNP,
+     pos = 4)
+
+#scatter plot
+p1 <- mr_scatter_plot(res, data)	
+p1[[1]]
+
+#Heterogeneity testing
+mr_heterogeneity<- mr_heterogeneity(data); mr_heterogeneity
+
+#pleiotropy testing
+mr_pleiotropy_test<- mr_pleiotropy_test(data); mr_pleiotropy_test
+
+#plot of single SNP MR:
+res_single <- mr_singlesnp(data); p2 <- mr_forest_plot(res_single); p2[[1]]
+
+#plot of LOO:
+res_loo <- mr_leaveoneout(data); p3 <- mr_leaveoneout_plot(res_loo); p3[[1]]
+
+#Funnel plot
+p4 <- mr_funnel_plot(res_single); p4[[1]]
+```
+
+
+
+# Testing Outlier with PRESSO test
+
+```{r PRESSO, echo=FALSE, message=FALSE, warning=FALSE}
+#Radial test: 
+data <- fread("data.txt")
+data <- as.data.frame(data)
+
+mr_presso(BetaOutcome = "beta.outcome", BetaExposure = "beta.exposure", SdOutcome = "se.outcome", SdExposure = "se.exposure",
+          OUTLIERtest = TRUE, DISTORTIONtest = TRUE, data = data, NbDistribution = 1000,  SignifThreshold = 0.05)
+
+data <- data[(data$SNP!="rs9368222" & data$SNP!="rs1708302"),]
+
+
+res<-mr(data)
+res
+plot(data$beta.exposure,data$beta.outcome)
+text(data$beta.exposure,                                
+     data$beta.outcome,
+     labels = data$SNP,
+     pos = 4)
+
+#scatter plot
+p1 <- mr_scatter_plot(res, data)	
+p1[[1]]
+
+#Heterogeneity testing
+mr_heterogeneity<- mr_heterogeneity(data); mr_heterogeneity
+
+#pleiotropy testing
+mr_pleiotropy_test<- mr_pleiotropy_test(data); mr_pleiotropy_test
+
+#plot of single SNP MR:
+res_single <- mr_singlesnp(data); p2 <- mr_forest_plot(res_single); p2[[1]]
+
+#plot of LOO:
+res_loo <- mr_leaveoneout(data); p3 <- mr_leaveoneout_plot(res_loo); p3[[1]]
+
+#Funnel plot
+p4 <- mr_funnel_plot(res_single); p4[[1]]
+```
+
+
+# Radial test
+
+```{r Radial, echo=FALSE, message=FALSE, warning=FALSE}
+#Radial test: 
+
+radial_data<-format_radial(data$beta.exposure, data$beta.outcome,
+                           data$se.exposure, data$se.outcome,
+                           data$SNP)
+ivw_model<-ivw_radial(radial_data, 0.05/nrow(radial_data),3,0.0001)
+ivw_model$outliers
+```
+
+
+# Studentized residuals:
+
+```{r Studentized residuals, echo=TRUE, message=FALSE, warning=FALSE}
+library(data.table)
+data<-fread("data.txt")
+reg_1<-lm(data$beta.outcome~data$beta.exposure-1)
+data$st_1<-rstandard(reg_1)
+
+#Histogram plot
+hist(data$st_1)
+```
+How many SNPs have been eliminated with checking the weakness: 0 SNP
+
+```{r Checking MR after Studentized residuals, echo=TRUE, message=FALSE, warning=FALSE}
+datacc_1 <- fread("datacc_1.txt")
+res_cc_1<-mr(datacc_1)
+res_cc_1
+mr_heterogeneity_datacc_1<- mr_heterogeneity(datacc_1); mr_heterogeneity_datacc_1
+mr_pleiotropy_test_datacc_1<- mr_pleiotropy_test(datacc_1); mr_pleiotropy_test_datacc_1
+```
+
+# Cook distance
+In statistics, Cook's distance or Cook's D is a commonly used estimate of the influence of a data point when performing a least-squares regression analysis.[1] In a practical ordinary least squares analysis, Cook's distance can be used in several ways:
+
+1- To indicate influential data points that are particularly worth checking for validity.
+
+2- To indicate regions of the design space where it would be good to be able to obtain more data points. 
+
+**It is named after the American statistician R. Dennis Cook, who introduced the concept in 1977.**
+
+[Refernce](https://link.springer.com/article/10.1007/s10654-017-0255-x)
+
+```{r Cook distance,, echo=TRUE, message=FALSE, warning=FALSE}
+library(data.table)
+library(TwoSampleMR)
+datacc_1 <- fread("datacc_1.txt")
+
+#Residuals vs fitted:
+plot(lm(datacc_1$beta.outcome~datacc_1$beta.exposure-1), which=1)
+
+#Q-Q Residuals:
+plot(lm(datacc_1$beta.outcome~datacc_1$beta.exposure-1), which=2)
+
+#Standardized Residuals:
+plot(lm(datacc_1$beta.outcome~datacc_1$beta.exposure-1), which=3)
+
+#Cook distance:
+plot(lm(datacc_1$beta.outcome~datacc_1$beta.exposure-1), which=4)
+
+```
+
+
+# MR analyses
+```{r Checking MR, echo=TRUE, message=FALSE, warning=FALSE}
+dataRC <- fread("dataRC.txt")
+res_RC<-mr(dataRC)
+res_RC
+mr_heterogeneity_dataRC<- mr_heterogeneity(dataRC); mr_heterogeneity_dataRC
+mr_pleiotropy_test_dataRC<- mr_pleiotropy_test(dataRC); mr_pleiotropy_test_dataRC 
+```
+
+# Sensitivity analyses
+
+```{r Mendelian Randomization package, echo=FALSE, message=FALSE, warning=FALSE}
+library(MendelianRandomization)
+dataRC<-fread("dataRC.txt")
+MRInputObject <- mr_input(bx = dataRC$beta.exposure,bxse = dataRC$se.exposure,by = dataRC$beta.outcome,byse = dataRC$se.outcome)
+IVWObject <- mr_ivw(MRInputObject,
+                    model = "default",
+                    robust = FALSE,
+                    penalized = FALSE,
+                    correl = FALSE,
+                    weights = "simple",
+                    psi = 0,
+                    distribution = "normal",
+                    alpha = 0.05)
+IVWObject
+
+MRAllObject_all <- mr_allmethods(MRInputObject, method = "all")
+MRAllObject_all
+mr_plot(MRAllObject_all)
+
+mr_forest(mr_input(bx = dataRC$beta.exposure,bxse = dataRC$se.exposure,by = dataRC$beta.outcome,byse = dataRC$se.outcome),
+          snp_estimates=FALSE,
+          methods = c("ivw", "median", "wmedian", "egger", "maxlik", "mbe"))
+###########
+dataRC$samplesize.exposure <- "417580"
+dataRC$samplesize.outcome <- "1245612"
+dataRC$samplesize.exposure <- as.numeric(dataRC$samplesize.exposure)
+dataRC$samplesize.outcome <- as.numeric(dataRC$samplesize.outcome)
+
+#out <- directionality_test(dataRC)
+#knitr::kable(out)
+
+mr_steiger(
+  p_exp = dataRC$pval.exposure, 
+  p_out = dataRC$pval.outcome, 
+  n_exp = dataRC$samplesize.exposure, 
+  n_out = dataRC$samplesize.outcome, 
+  r_xxo = 1, 
+  r_yyo = 1,
+  r_exp=0,
+  r_out = 0.5
+)
+```
+
+# Working with  MRraps
+
+```{r MRraps, echo=FALSE, message=FALSE, warning=FALSE}
+
+library(mr.raps)
+mr.raps.simple(dataRC$beta.exposure,dataRC$beta.outcome, dataRC$se.exposure, dataRC$se.outcome, diagnosis = FALSE)
+mr.raps.all(dataRC$beta.exposure,dataRC$beta.outcome, dataRC$se.exposure, dataRC$se.outcome)
+mr_lasso(mr_input(bx = dataRC$beta.exposure,bxse = dataRC$se.exposure,by = dataRC$beta.outcome,byse = dataRC$se.outcome))
+mr_cML(mr_input(bx = dataRC$beta.exposure,bxse = dataRC$se.exposure,by = dataRC$beta.outcome,byse = dataRC$se.outcome), MA = TRUE, DP = FALSE,, n = 417580)
+mr_divw(mr_input(bx = dataRC$beta.exposure,bxse = dataRC$se.exposure,by = dataRC$beta.outcome,byse = dataRC$se.outcome))
+mr_mbe(mr_input(bx = dataRC$beta.exposure,bxse = dataRC$se.exposure,by = dataRC$beta.outcome,byse = dataRC$se.outcome), weighting="weighted", stderror="delta",iterations=100)
+mr_funnel(MRInputObject, CI = TRUE)
+mr_plot(mr_input(bx = dataRC$beta.exposure,bxse = dataRC$se.exposure,by = dataRC$beta.outcome,byse = dataRC$se.outcome),
+        error = TRUE, orientate = FALSE, line = "ivw", interactive = FALSE)
+```
